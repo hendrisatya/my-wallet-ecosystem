@@ -4,3 +4,27 @@ server:
 spring:
   application:
     name: wallet-auth
+
+  # 1. DATABASE CONFIG (Pointing to port 5433)
+  datasource:
+    url: jdbc:postgresql://localhost:5433/auth_db
+    username: myuser
+    password: mypassword
+    driver-class-name: org.postgresql.Driver
+  
+  # JPA Settings
+  jpa:
+    hibernate:
+      ddl-auto: update # For dev only. In prod, use Flyway/Liquibase.
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true # Pretty print SQL in logs
+    show-sql: true
+
+  # 2. REDIS CONFIG
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: "" # No password in our docker-compose setup
