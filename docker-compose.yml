@@ -1,0 +1,87 @@
+services:
+  # ---------------------------------------------------------
+  # 1. DATABASE (Postgres 16)
+  # Hosting both 'auth_db' and 'ledger_db'
+  # ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: wallet-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: postgres # Default maintenance DB
+    ports:
+      - "5433:5432" # Host Port 5433 -> Container Port 5432
+    volumes:
+      # Persist data so you don't lose it on restart
+      - postgres_data:/var/lib/postgresql/data
+      # The magic script to create multiple DBs
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - wallet-network
+
+  # ---------------------------------------------------------
+  # 2. CACHE (Redis 7)
+  # For JWT Blacklisting and Session Management
+  # ---------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: wallet-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - wallet-network
+
+  # ---------------------------------------------------------
+  # 3. MESSAGE BROKER (Kafka KRaft Mode)
+  # No Zookeeper needed. 
+  # ---------------------------------------------------------
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: wallet-kafka
+    hostname: kafka
+    ports:
+      - "9092:9092" # Internal (Docker network)
+      - "9093:9093" # External (Your Arch Linux)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9094,EXTERNAL://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # Dev convenience
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - wallet-network
+
+  # ---------------------------------------------------------
+  # 4. KAFKA UI (Optional but recommended)
+  # View topics/messages at http://localhost:8090
+  # ---------------------------------------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: wallet-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - wallet-network
+
+# Define persistent storage
+volumes:
+  postgres_data:
+
+# Define private network
+networks:
+  wallet-network:
+    driver: bridge
