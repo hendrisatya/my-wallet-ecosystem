@@ -43,6 +43,6 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
-    
-    private final boolean active = true;
+    @Builder.Default
+    private boolean active = true;
 }
