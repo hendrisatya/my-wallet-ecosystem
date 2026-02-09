@@ -35,6 +35,7 @@
     <modules>
         <module>wallet-common</module>
         <module>wallet-auth</module>
+        <module>wallet-ledger</module>
     </modules>
 
     <build>
