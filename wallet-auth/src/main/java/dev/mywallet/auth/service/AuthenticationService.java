@@ -23,6 +23,7 @@ public class AuthenticationService {
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
 
+    @SuppressWarnings("null")
     public AuthenticationResponse register(RegisterRequest request) {
         if (repository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already taken");
@@ -33,11 +34,12 @@ public class AuthenticationService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ROLE_USER)
+                .active(true)
                 .build();
 
-        repository.save(user);
+        var savedUser = repository.save(user);
 
-        var jwtToken = jwtUtils.generateToken(user.getEmail());
+        var jwtToken = jwtUtils.generateToken(savedUser.getEmail());
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
