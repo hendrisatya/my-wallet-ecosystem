@@ -12,6 +12,7 @@ import dev.mywallet.auth.entity.UserEntity;
 import dev.mywallet.auth.repository.UserRepository;
 import dev.mywallet.auth.util.JwtUtils;
 import dev.mywallet.common.enums.Role;
+import dev.mywallet.common.event.UserCreatedEvent;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,6 +23,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
+    private final UserProducer userProducer;
 
     @SuppressWarnings("null")
     public AuthenticationResponse register(RegisterRequest request) {
@@ -38,6 +40,12 @@ public class AuthenticationService {
                 .build();
 
         var savedUser = repository.save(user);
+
+        userProducer.sendUserCreatedEvent(new UserCreatedEvent(
+            savedUser.getId().toString(),
+            savedUser.getEmail(),
+            savedUser.getFullName()
+        ));
 
         var jwtToken = jwtUtils.generateToken(savedUser.getEmail());
 
