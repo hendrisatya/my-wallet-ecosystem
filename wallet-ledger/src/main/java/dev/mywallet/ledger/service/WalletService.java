@@ -3,6 +3,7 @@ package dev.mywallet.ledger.service;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import dev.mywallet.common.event.TransferEvent;
 import org.springframework.stereotype.Service;
 
 import dev.mywallet.ledger.entity.TransactionEntity;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class WalletService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final LedgerProducer ledgerProducer;
 
     @SuppressWarnings("null")
     public WalletEntity createWallet(String userId) {
@@ -108,6 +110,15 @@ public class WalletService {
                 .referenceId(refId)
                 .status("SUCCESS")
                 .build();
+
+        // 8. Emit event
+        ledgerProducer.sendTransferEvent(new TransferEvent(
+                refId,
+                fromUserId,
+                toUserId,
+                amount,
+                "SUCCESS"
+        ));
 
         transactionRepository.save(senderTx);
         transactionRepository.save(receiverTx);
