@@ -64,15 +64,18 @@ public class WalletService {
         }
 
         // 2. Deadlock Prevention: Order the IDs
-        String firstLock = fromUserId.compareTo(toUserId) < 0 ? fromUserId : toUserId;
-        String secondLock = fromUserId.compareTo(toUserId) < 0 ? toUserId : fromUserId;
+        String firstLockId = fromUserId.compareTo(toUserId) < 0 ? fromUserId : toUserId;
+        String secondLockId = fromUserId.compareTo(toUserId) < 0 ? toUserId : fromUserId;
 
         // 3. Acquire Locks in Order
-        WalletEntity senderWallet = walletRepository.findByUserIdAndCurrency(fromUserId, "IDR")
-                .orElseThrow(() -> new RuntimeException("Sender wallet not found"));
+        WalletEntity firstWallet = walletRepository.findByUserIdAndCurrency(firstLockId, "IDR")
+                .orElseThrow(() -> new RuntimeException("Wallet not found " + firstLockId));
 
-        WalletEntity receiverWallet = walletRepository.findByUserIdAndCurrency(toUserId, "IDR")
-                .orElseThrow(() -> new RuntimeException("Receiver wallet not found"));
+        WalletEntity secondWallet = walletRepository.findByUserIdAndCurrency(secondLockId, "IDR")
+                .orElseThrow(() -> new RuntimeException("Wallet not found " + secondLockId));
+
+        WalletEntity senderWallet = firstWallet.getUserId().equals(fromUserId) ? firstWallet : secondWallet;
+        WalletEntity receiverWallet = firstWallet.getUserId().equals(toUserId) ? firstWallet : secondWallet;
 
         // 4. Check Balance
         if (senderWallet.getBalance().compareTo(amount) < 0) {
@@ -99,7 +102,7 @@ public class WalletService {
 
         // 7. Record Transaction (Receiver)
         TransactionEntity receiverTx = TransactionEntity.builder()
-                .userId(fromUserId)
+                .userId(toUserId)
                 .amount(amount) // Positive for receiver
                 .transactionType("TRANSFER_IN")
                 .referenceId(refId)
