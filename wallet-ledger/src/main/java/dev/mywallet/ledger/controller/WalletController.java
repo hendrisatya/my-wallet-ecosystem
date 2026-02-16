@@ -1,5 +1,6 @@
 package dev.mywallet.ledger.controller;
 
+import dev.mywallet.ledger.dto.TransferRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,5 +27,11 @@ public class WalletController {
     @PostMapping("/topup")
     public ResponseEntity<WalletEntity> topUp(@RequestBody TopUpRequest request) {
         return ResponseEntity.ok(walletService.topUp(request.getUserId(), request.getAmount()));
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<String> transfer(@RequestBody TransferRequest request) {
+        walletService.transfer(request.getFromUserId(), request.getToUserId(), request.getAmount());
+        return ResponseEntity.ok("Transfer successful");
     }
 }
