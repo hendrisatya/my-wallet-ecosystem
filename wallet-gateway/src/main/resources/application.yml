@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: wallet-gateway
+
+  cloud:
+    gateway:
+      # NEW STRUCTURE according to your logs:
+      server:
+        webflux:
+          routes:
+            # Route 1: Auth Service
+            - id: auth-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**
+            
+            # Route 2: Ledger Service (Wallets)
+            - id: ledger-service-wallets
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/wallets/**
+
+            # Route 3: Ledger Service (Transactions)
+            - id: ledger-service-transactions
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/transactions/**
